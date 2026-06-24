@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>23Constructions Clock</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --card2:#273549; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8;
+    --in:#22c55e; --in-bg:#14361f; --out:#f97316; --out-bg:#3a230f;
+    --accent:#38bdf8; --danger:#ef4444;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--txt);line-height:1.5}
+  header{padding:18px 20px;background:linear-gradient(135deg,#0c4a6e,#1e293b);
+    display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10}
+  header h1{font-size:1.15rem;margin:0;display:flex;align-items:center;gap:10px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 0 rgba(56,189,248,.6)}
+  .dot.live{background:var(--in);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+  main{max-width:760px;margin:0 auto;padding:16px}
+  .tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--card);padding:5px;border-radius:12px}
+  .tabs button{flex:1;padding:10px;border:0;border-radius:8px;background:transparent;color:var(--muted);
+    font-size:.92rem;font-weight:600;cursor:pointer}
+  .tabs button.active{background:var(--card2);color:var(--txt)}
+  .panel{display:none}.panel.active{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  .mode-toggle{display:flex;gap:8px;margin-bottom:16px}
+  .mode-toggle button{flex:1;padding:14px;border-radius:10px;border:2px solid var(--line);background:var(--card2);
+    color:var(--muted);font-weight:700;font-size:1rem;cursor:pointer;transition:.15s}
+  .mode-toggle button.sel-in{border-color:var(--in);background:var(--in-bg);color:var(--in)}
+  .mode-toggle button.sel-out{border-color:var(--out);background:var(--out-bg);color:var(--out)}
+  .scan-btn{width:100%;padding:20px;font-size:1.15rem;font-weight:700;border:0;border-radius:14px;
+    background:var(--accent);color:#06283d;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px}
+  .scan-btn:disabled{opacity:.45}
+  .scan-btn.scanning{background:var(--card2);color:var(--accent);border:2px dashed var(--accent)}
+  .scan-btn.in{background:var(--in);color:#06281a}
+  .scan-btn.out{background:var(--out);color:#3a1c05}
+  #bigStatus{margin-bottom:14px;text-align:center;min-height:46px}
+  .bs-name{display:block;font-size:1.35rem;font-weight:700;margin-bottom:4px}
+  .bs-state{display:inline-block;font-weight:700;font-size:.95rem;margin-bottom:4px}
+  .bs-state.in{color:var(--in)} .bs-state.out{color:var(--out)}
+  #ownerCard select{margin-top:8px}
+  .status{margin-top:14px;padding:14px;border-radius:10px;text-align:center;font-weight:600;display:none}
+  .status.show{display:block}
+  .status.ok{background:var(--in-bg);color:var(--in)}
+  .status.warn{background:var(--out-bg);color:var(--out)}
+  .status.err{background:#3a1212;color:#fca5a5}
+  .big{font-size:1.5rem;display:block;margin-bottom:2px}
+  .muted{color:var(--muted);font-size:.85rem}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+  .badge{padding:2px 9px;border-radius:20px;font-size:.72rem;font-weight:700}
+  .badge.IN{background:var(--in-bg);color:var(--in)}
+  .badge.OUT{background:var(--out-bg);color:var(--out)}
+  .flag{padding:1px 7px;border-radius:20px;font-size:.68rem;font-weight:700;margin-left:4px;white-space:nowrap}
+  .fl-ok{background:var(--in-bg);color:var(--in)}
+  .fl-short{background:#3a1212;color:#fca5a5}
+  .fl-ot{background:#3a2a0f;color:#fbbf24}
+  .fl-na{background:var(--card2);color:var(--muted)}
+  input,select{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);
+    background:var(--card2);color:var(--txt);font-size:.95rem;margin-top:4px}
+  label{font-size:.82rem;color:var(--muted);display:block;margin-bottom:10px}
+  .row{display:flex;gap:10px}.row>*{flex:1}
+  .btn{padding:11px 16px;border:0;border-radius:9px;background:var(--accent);color:#06283d;font-weight:700;cursor:pointer}
+  .btn.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+  .btn.danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+  .btn.sm{padding:6px 11px;font-size:.82rem}
+  .roster-item{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);
+    border-radius:10px;margin-bottom:8px;background:var(--card2)}
+  .roster-item .info{flex:1;min-width:0}
+  .roster-item .name{font-weight:600}
+  .roster-item .id{font-family:monospace;font-size:.78rem;color:var(--muted);word-break:break-all}
+  .empty{text-align:center;color:var(--muted);padding:30px 10px}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .stat{background:var(--card2);border-radius:10px;padding:12px;text-align:center}
+  .stat .n{font-size:1.4rem;font-weight:700}
+  .stat .l{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .hint{font-size:.8rem;color:var(--muted);background:var(--card2);border-left:3px solid var(--accent);
+    padding:10px 12px;border-radius:6px;margin-top:12px}
+  .pending{outline:2px solid var(--accent);outline-offset:2px}
+  .name-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .name-btn{padding:16px 12px;border-radius:12px;border:2px solid var(--line);background:var(--card2);
+    color:var(--txt);font-weight:600;font-size:1rem;cursor:pointer;text-align:left;line-height:1.3;transition:.12s}
+  .name-btn:active{transform:scale(.97)}
+  .name-btn .sub{display:block;font-size:.74rem;color:var(--muted);font-weight:400;margin-top:2px}
+  .name-btn.on{border-color:var(--in);background:var(--in-bg)}
+  .name-btn.go-in{border-color:var(--in)}
+  .name-btn.go-out{border-color:var(--out)}
+  .lock-card{text-align:center}
+  .lock-card .lk{font-size:2rem}
+  .lock-card input{max-width:220px;margin:10px auto 0;text-align:center;letter-spacing:.3em}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="dot" id="liveDot"></span>23Constructions Clock</h1>
+  <span class="muted" id="clock"></span>
+</header>
+<main>
+  <div class="tabs">
+    <button class="active" data-tab="clock">Clock</button>
+    <button data-tab="records">Records 🔒</button>
+    <button data-tab="admin">Admin 🔒</button>
+  </div>
+
+  <!-- CLOCK -->
+  <section class="panel active" id="tab-clock">
+    <div class="card" id="ownerCard"></div>
+    <div class="card">
+      <div id="bigStatus"></div>
+      <label>Job site<select id="siteSel"></select></label>
+      <div class="mode-toggle">
+        <button id="modeIn" class="sel-in">● CLOCK IN</button>
+        <button id="modeOut">● CLOCK OUT</button>
+      </div>
+      <button class="scan-btn" id="actionBtn" disabled>Confirm Clock In</button>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" id="nfcBtn" style="flex:1">📡 Enable tag tap</button>
+        <button class="btn ghost" id="myTimesheetBtn" style="flex:1" disabled>⬇ My timesheet</button>
+      </div>
+      <div class="status" id="status"></div>
+      <div class="hint" id="ruleHint">This phone is registered to one person — only they can clock in/out here. Pick CLOCK IN or CLOCK OUT, then press the button or tap the assigned tag. Workday starts 6:00 — clock-in rounds up to the next 15 min (6:10 → 6:15), clock-out rounds down to the previous 15 min (1:50 → 1:45). Minimum 8 h per shift; over 10 h needs approver sign-off.</div>
+      <div class="hint" id="nfcHint"></div>
+    </div>
+  </section>
+
+  <!-- RECORDS (admin only) -->
+  <section class="panel" id="tab-records">
+    <div class="card lock-card" id="recordsLock"></div>
+    <div id="recordsBody" style="display:none">
+      <div class="card">
+        <div class="stat-grid">
+          <div class="stat"><div class="n" id="statIn">0</div><div class="l">In today</div></div>
+          <div class="stat"><div class="n" id="statEvents">0</div><div class="l">Events today</div></div>
+          <div class="stat"><div class="n" id="statHours">0.0</div><div class="l">Hours today</div></div>
+        </div>
+        <div class="row" style="margin-bottom:14px">
+          <button class="btn" id="exportBtn">⬇ Export CSV</button>
+          <button class="btn ghost" id="exportTodayBtn">⬇ Today only</button>
+        </div>
+        <div id="logBody"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn danger sm" id="clearBtn" style="flex:0 0 auto">Clear all records</button>
+          <button class="btn ghost sm" id="lockBtn" style="flex:0 0 auto">Lock admin</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADMIN (admin only) -->
+  <section class="panel" id="tab-admin">
+    <div class="card lock-card" id="adminLock"></div>
+    <div id="adminBody" style="display:none">
+      <div class="card">
+        <strong>Device registration</strong>
+        <div class="muted" id="devOwnerLine" style="font-size:.85rem;margin:6px 0 12px"></div>
+        <button class="btn danger" style="width:100%" id="resetDevBtn">Reset this device's registration</button>
+      </div>
+      <div class="card">
+        <strong>Manual clock-in / out</strong>
+        <div class="muted" style="font-size:.82rem;margin:4px 0 12px">For staff without a phone. Same rules apply (6:00 start, round-up in / round-down out, overtime approval).</div>
+        <label>Employee<select id="manEmp"></select></label>
+        <label>Job site<select id="manSite"></select></label>
+        <label>Action<select id="manAction"><option value="IN">Clock IN</option><option value="OUT">Clock OUT</option></select></label>
+        <label>Date &amp; time <span style="color:var(--muted)">(blank = now)</span><input type="datetime-local" id="manTime"></label>
+        <button class="btn" style="width:100%" id="manBtn">Record entry</button>
+        <div class="status" id="adminStatus"></div>
+      </div>
+      <div class="card">
+        <strong>Job sites</strong>
+        <div class="muted" style="font-size:.82rem;margin:4px 0 12px">Sites employees can pick when clocking in. Editable by admin.</div>
+        <label>Site name<input id="siteName" placeholder="e.g. Main Street Tower"></label>
+        <button class="btn" style="width:100%" id="addSiteBtn">Add site</button>
+        <div class="status" id="siteStatus"></div>
+        <div id="siteList" style="margin-top:12px"></div>
+      </div>
+      <div class="card">
+        <strong>Add employee</strong>
+        <div style="margin-top:12px">
+          <label>Name<input id="empName" placeholder="Jane Doe"></label>
+          <label>Card / tag ID <span style="color:var(--muted)">(optional)</span>
+            <input id="empId" placeholder="Leave blank for name-only sign in">
+          </label>
+          <div class="row">
+            <button class="btn ghost" id="captureBtn">📡 Capture from card</button>
+            <button class="btn" id="addEmpBtn">Add employee</button>
+          </div>
+          <div class="status" id="rosterStatus"></div>
+        </div>
+      </div>
+      <div class="card">
+        <strong>Roster</strong>
+        <div id="rosterList" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const LS_LOG='nfc_tc_log', LS_ROS='nfc_tc_roster', LS_OWNER='nfc_tc_owner';
+const LS_SITES='nfc_tc_sites', LS_CURSITE='nfc_tc_cursite';
+const MIN_HOURS=8, MAX_HOURS=10;   // <8h flagged short; >10h needs permission
+const DAY_START_H=6, ROUND_MIN=15; // workday starts 6:00; round clock-in UP to 15-min marks
+let mode='IN';                     // set automatically before each record()
+let log = load(LS_LOG, []);
+let roster = load(LS_ROS, []);
+let ownerKey = localStorage.getItem(LS_OWNER)||'';  // this device belongs to one person
+// shared default job sites baked into the app — every phone sees these
+const DEFAULT_SITES=['80 Collins Street','Westpac 150 Collins Street','Warehouse/Storage'];
+let sites = load(LS_SITES, null);                   // job sites, admin-editable
+if(!Array.isArray(sites)) sites = [];
+// seed the built-in sites once per device; admins can add/rename/remove afterwards
+if(!localStorage.getItem('nfc_tc_sites_seeded')){
+  DEFAULT_SITES.forEach(s=>{ if(!sites.some(x=>x.toLowerCase()===s.toLowerCase())) sites.push(s); });
+  localStorage.setItem('nfc_tc_sites_seeded','1');
+  localStorage.setItem(LS_SITES, JSON.stringify(sites));
+}
+let curSite = localStorage.getItem(LS_CURSITE)||''; // selected site on this device
+const ADMIN_PW='2580';            // admin password for records + manual entry
+let adminUnlocked=false;          // session-only; resets on reload
+let captureTarget=null; // 'roster' or null
+let reader=null, scanning=false;
+
+function load(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}}
+function save(){localStorage.setItem(LS_LOG,JSON.stringify(log));localStorage.setItem(LS_ROS,JSON.stringify(roster))}
+function $(id){return document.getElementById(id)}
+const nfcSupported = ('NDEFReader' in window);
+function newKey(){return 'E'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+// migrate older roster items {name,id} -> {key,name,card}
+roster.forEach(r=>{
+  if(!r.key)r.key=r.id||newKey();
+  if(r.card===undefined)r.card=r.id||'';
+});
+save();
+
+/* ---------- live clock ---------- */
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString()},1000);
+$('clock').textContent=new Date().toLocaleTimeString();
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');$('tab-'+b.dataset.tab).classList.add('active');
+  if(b.dataset.tab==='records')renderRecords();
+  if(b.dataset.tab==='admin')renderAdmin();
+  if(b.dataset.tab==='clock')renderClock();
+});
+
+/* ---------- admin gate ---------- */
+function lockHTML(inputId){
+  return `<div class="lk">🔒</div><strong>Admin access</strong>
+    <div class="muted" style="margin:6px 0 4px">Enter the admin password to view hours and manage staff.</div>
+    <input type="password" inputmode="numeric" id="${inputId}" placeholder="••••"
+      onkeydown="if(event.key==='Enter')tryUnlock('${inputId}')">
+    <button class="btn" style="margin-top:12px;width:100%;max-width:220px" onclick="tryUnlock('${inputId}')">Unlock</button>`;
+}
+function tryUnlock(inputId){
+  const v=($(inputId).value||'').trim();
+  if(v===ADMIN_PW){adminUnlocked=true;renderRecords();renderAdmin();}
+  else{$(inputId).value='';$(inputId).placeholder='Wrong — try again';}
+}
+function ensureAdmin(){
+  if(adminUnlocked)return true;
+  const v=prompt('Admin password required:');
+  if(v===ADMIN_PW){adminUnlocked=true;return true;}
+  if(v!=null)alert('Wrong password.');
+  return false;
+}
+function lockAdmin(){adminUnlocked=false;renderRecords();renderAdmin();}
+function renderRecords(){
+  if(!adminUnlocked){$('recordsLock').style.display='';$('recordsLock').innerHTML=lockHTML('pw1');$('recordsBody').style.display='none';return;}
+  $('recordsLock').style.display='none';$('recordsBody').style.display='';
+  renderLog();
+}
+function renderAdmin(){
+  if(!adminUnlocked){$('adminLock').style.display='';$('adminLock').innerHTML=lockHTML('pw2');$('adminBody').style.display='none';return;}
+  $('adminLock').style.display='none';$('adminBody').style.display='';
+  const o=getOwner();
+  $('devOwnerLine').innerHTML=o
+    ? 'This phone is registered to <b>'+esc(o.name)+'</b>. Reset only if it was set by mistake.'
+    : 'This phone is not registered yet.';
+  renderRoster();renderManualEmployees();renderSites();
+}
+
+/* ---------- device owner (one person per phone) ---------- */
+function getOwner(){return roster.find(r=>r.key===ownerKey)||null;}
+function saveOwner(){localStorage.setItem(LS_OWNER,ownerKey||'');}
+function setOwner(k){ownerKey=k;saveOwner();renderClock();}
+// employee self-registration by name — permanent once set
+function registerSelf(){
+  const name=($('selfName')&&$('selfName').value||'').trim();
+  if(!name){showStatus('err','Name required','Type your name to continue.');return;}
+  if(!confirm('Register this phone to "'+name+'"?\n\nThis name CANNOT be changed afterwards.')) return;
+  let emp=roster.find(r=>r.name.toLowerCase()===name.toLowerCase());
+  if(!emp){emp={key:newKey(),name,card:''};roster.push(emp);save();}
+  setOwner(emp.key);
+  if(adminUnlocked){renderRoster();renderManualEmployees();}
+  showStatus('ok','Welcome, '+name,'This phone is now registered to you.');
+}
+// admin-only reset (safety net for typos); not shown on the clock screen
+function changeOwner(){if(!ensureAdmin())return;if(confirm('Reset this device registration? The next person to enter their name will own it.')){ownerKey='';saveOwner();renderClock();renderAdmin();}}
+
+function renderOwnerCard(){
+  const el=$('ownerCard'), o=getOwner();
+  if(o){
+    el.innerHTML=`<div class="muted" style="font-size:.72rem;letter-spacing:.05em">REGISTERED TO THIS PHONE</div>
+      <div style="font-weight:700;font-size:1.15rem">${esc(o.name)}</div>
+      <div class="muted" style="font-size:.74rem;margin-top:3px">🔒 Locked to this person — can't be changed</div>`;
+  } else {
+    el.innerHTML=`<strong>Enter your name to start</strong>
+      <div class="muted" style="font-size:.82rem;margin:4px 0 8px">This registers the phone to you. ⚠ Your name <b>can't be changed</b> afterwards — type it carefully.</div>
+      <label>Your name<input id="selfName" placeholder="e.g. Ahmad bin Ali" autocomplete="off"></label>
+      <button class="btn" style="margin-top:10px;width:100%" onclick="registerSelf()">Set my name &amp; lock phone</button>`;
+  }
+}
+
+/* ---------- mode toggle ---------- */
+$('modeIn').onclick=()=>setMode('IN');
+$('modeOut').onclick=()=>setMode('OUT');
+function setMode(m){
+  mode=m;
+  $('modeIn').className=m==='IN'?'sel-in':'';
+  $('modeOut').className=m==='OUT'?'sel-out':'';
+  renderClock();
+}
+
+/* ---------- clock screen render ---------- */
+function renderClock(){
+  renderOwnerCard();
+  if($('siteSel'))$('siteSel').innerHTML=siteOptions(curSite);
+  const o=getOwner(), bs=$('bigStatus'), ab=$('actionBtn');
+  $('myTimesheetBtn').disabled=!o;
+  if(!o){
+    bs.innerHTML='<span class="muted">Register this phone to an employee to begin.</span>';
+    ab.disabled=true;ab.className='scan-btn';ab.textContent='Confirm';
+    return;
+  }
+  ab.disabled=false;
+  const ie=openIn(o.key);
+  if(ie){
+    const inT=new Date(ie.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const eff=new Date(startTs(ie)).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    bs.innerHTML=`<span class="bs-name">${esc(o.name)}</span>
+      <span class="bs-state in">● Currently CLOCKED IN</span><br>
+      <span class="muted">since ${inT}${startTs(ie)!==ie.ts?' · counts from '+eff:''}</span>`;
+  } else {
+    bs.innerHTML=`<span class="bs-name">${esc(o.name)}</span>
+      <span class="bs-state out">Clocked OUT</span>`;
+  }
+  ab.className='scan-btn '+(mode==='IN'?'in':'out');
+  ab.textContent=mode==='IN'?'Confirm CLOCK IN':'Confirm CLOCK OUT';
+}
+
+/* perform the selected action for the device owner only */
+function doAction(){
+  const o=getOwner();
+  if(!o){showStatus('err','No employee registered','Register this phone first.');return;}
+  if(mode==='IN'&&openIn(o.key)){showStatus('warn','Already clocked in',o.name+' is already IN. Switch to CLOCK OUT.');return;}
+  if(mode==='OUT'&&!openIn(o.key)){showStatus('warn','Not clocked in',o.name+' has no open shift. Switch to CLOCK IN.');return;}
+  record(o.name,o.key,false);
+  renderClock();
+}
+$('actionBtn').onclick=doAction;
+
+/* ---------- admin: manual clock-in / out ---------- */
+function renderManualEmployees(){
+  const sel=$('manEmp');
+  if(!roster.length){sel.innerHTML='<option value="">No employees — add one below</option>';return;}
+  const cur=sel.value;
+  sel.innerHTML=roster.map(r=>`<option value="${r.key}">${esc(r.name)}</option>`).join('');
+  if(cur)sel.value=cur;
+}
+$('resetDevBtn').onclick=()=>{if(adminUnlocked)changeOwner();};
+$('manBtn').onclick=()=>{
+  if(!adminUnlocked)return;
+  const emp=roster.find(r=>r.key===$('manEmp').value);
+  if(!emp){showStatus('err','Pick an employee','','adminStatus');return;}
+  const action=$('manAction').value;
+  const tv=$('manTime').value;
+  const ts=tv?new Date(tv).getTime():Date.now();
+  if(isNaN(ts)){showStatus('err','Invalid date/time','','adminStatus');return;}
+  if(action==='OUT'&&!openIn(emp.key)){
+    if(!confirm(emp.name+' has no open clock-in. Record this OUT anyway?')) return;
+  }
+  if(recordAt(emp.name,emp.key,action,ts,true,false,$('manSite').value)){
+    $('manTime').value='';
+    renderLog();renderClock();
+  }
+};
+
+/* ---------- job sites (admin-editable) ---------- */
+function saveSites(){localStorage.setItem(LS_SITES,JSON.stringify(sites));localStorage.setItem(LS_CURSITE,curSite||'');}
+function siteOptions(selected){
+  const opts=['<option value="">— No site —</option>']
+    .concat(sites.map(s=>`<option value="${esc(s)}"${s===selected?' selected':''}>${esc(s)}</option>`));
+  return opts.join('');
+}
+function renderSites(){
+  if(curSite && !sites.includes(curSite))curSite='';
+  const ss=$('siteSel'); if(ss)ss.innerHTML=siteOptions(curSite);
+  const ms=$('manSite'); if(ms){const cur=ms.value;ms.innerHTML=siteOptions(cur||curSite);}
+  const list=$('siteList');
+  if(list){
+    list.innerHTML=sites.length===0
+      ? '<div class="empty">No job sites yet.</div>'
+      : sites.map((s,i)=>`<div class="roster-item"><div class="info"><div class="name">${esc(s)}</div></div>
+          <button class="btn ghost sm" onclick="renameSite(${i})">Rename</button>
+          <button class="btn danger sm" onclick="delSite(${i})">Remove</button></div>`).join('');
+  }
+}
+$('siteSel') && ($('siteSel').onchange=()=>{curSite=$('siteSel').value;saveSites();});
+$('addSiteBtn').onclick=()=>{
+  if(!adminUnlocked)return;
+  const n=$('siteName').value.trim();
+  if(!n){showStatus('err','Site name required','','siteStatus');return;}
+  if(sites.some(s=>s.toLowerCase()===n.toLowerCase())){showStatus('err','Site already exists','','siteStatus');return;}
+  sites.push(n);saveSites();$('siteName').value='';
+  showStatus('ok','Site added',n,'siteStatus');
+  renderSites();
+};
+function renameSite(i){
+  if(!ensureAdmin())return;
+  const v=prompt('Rename job site:',sites[i]); if(v===null)return;
+  const n=v.trim(); if(!n)return;
+  if(sites.some((s,j)=>j!==i&&s.toLowerCase()===n.toLowerCase())){alert('A site with that name already exists.');return;}
+  const old=sites[i]; sites[i]=n;
+  if(curSite===old)curSite=n;
+  saveSites();renderSites();
+}
+function delSite(i){
+  if(!ensureAdmin())return;
+  if(confirm('Remove job site "'+sites[i]+'"? Past records keep their site name.')){
+    if(curSite===sites[i])curSite='';
+    sites.splice(i,1);saveSites();renderSites();
+  }
+}
+
+/* ---------- NFC hint ---------- */
+$('nfcHint').innerHTML = nfcSupported
+  ? '✓ Web NFC available. Press “Enable tag tap”, then hold the registered tag to the back of the phone.'
+  : '⚠ Tag tap needs Chrome on Android (over HTTPS). On other devices, use the CLOCK IN / CLOCK OUT button — it works everywhere.';
+
+/* ---------- scanning ---------- */
+$('nfcBtn').onclick=toggleScan;
+async function toggleScan(){
+  if(!nfcSupported){
+    showStatus('warn','Tag tap not available','This device can’t read NFC tags — use the button above instead.');
+    return;
+  }
+  if(scanning){stopScan();return;}
+  try{
+    reader=new NDEFReader();
+    await reader.scan();
+    scanning=true;
+    $('liveDot').classList.add('live');
+    $('nfcBtn').textContent='⏹ Listening — tap the tag (tap here to stop)';
+    reader.onreading=e=>handleTag(e.serialNumber);
+    reader.onreadingerror=()=>showStatus('err','Could not read tag','Try again');
+  }catch(err){
+    showStatus('err','NFC error',err.message+'. Use the button above instead.');
+  }
+}
+function stopScan(){
+  scanning=false;$('liveDot').classList.remove('live');
+  $('nfcBtn').textContent='📡 Enable tag tap';
+}
+
+/* normalize serial */
+function norm(s){return (s||'').toString().toUpperCase().replace(/[^0-9A-F]/g,'')||s}
+
+function handleTag(serial){
+  serial=norm(serial);
+  if(captureTarget==='roster'){
+    $('empId').value=serial;
+    captureTarget=null;
+    showStatus('ok','Card captured',serial,'rosterStatus');
+    stopScan();
+    return;
+  }
+  const tagOwner=roster.find(r=>r.card&&norm(r.card)===serial);
+  const o=getOwner();
+  if(!o){
+    // first tap registers this phone to whoever tapped (must be a known tag)
+    if(tagOwner){
+      setOwner(tagOwner.key);
+      showStatus('ok','Registered to '+tagOwner.name,'This phone is now yours. Continuing…');
+      navigator.vibrate&&navigator.vibrate(80);
+      doAction();
+    } else {
+      showStatus('err','Enter your name first','Type your name on the Clock screen to register this phone.');
+      navigator.vibrate&&navigator.vibrate([200,80,200]);
+    }
+    return;
+  }
+  // one person per phone: only the registered person's tag is accepted
+  if(o.card){
+    if(norm(o.card)!==serial){
+      const who=tagOwner?tagOwner.name:'This tag';
+      showStatus('err','Not your phone',who+' is not registered to this device.');
+      navigator.vibrate&&navigator.vibrate([200,80,200]);
+      return;
+    }
+  } else if(tagOwner&&tagOwner.key!==o.key){
+    // owner has no linked card, but the tag belongs to a different registered person
+    showStatus('err','Not your phone',tagOwner.name+' is not registered to this device.');
+    navigator.vibrate&&navigator.vibrate([200,80,200]);
+    return;
+  }
+  // accepted -> perform the currently selected mode for the owner
+  doAction();
+}
+
+// Normalize a clock-in time:
+//  - before 6:00 -> 6:00 (workday floor)
+//  - 6:00 or later -> rounded UP to the next 15-minute mark (6:10 -> 6:15)
+function adjustStart(ts){
+  const d=new Date(ts);
+  const floor=new Date(d); floor.setHours(DAY_START_H,0,0,0);
+  if(d.getTime()<=floor.getTime()) return floor.getTime();
+  const x=new Date(d);
+  if(x.getSeconds()>0||x.getMilliseconds()>0){x.setSeconds(0,0);x.setMinutes(x.getMinutes()+1);}
+  const rem=x.getMinutes()%ROUND_MIN;
+  if(rem!==0) x.setMinutes(x.getMinutes()+(ROUND_MIN-rem));
+  x.setSeconds(0,0);
+  return x.getTime();
+}
+// Normalize a clock-out time: round DOWN to the previous 15-minute mark (1:50 -> 1:45)
+function adjustEnd(ts){
+  const x=new Date(ts);
+  x.setMinutes(x.getMinutes()-(x.getMinutes()%ROUND_MIN),0,0);
+  return x.getTime();
+}
+// effective time used for hours: adjusted time if present, else raw
+function startTs(e){return e.adjTs!=null?e.adjTs:e.ts;}
+
+// find this employee's most recent IN that has no later OUT
+function openIn(id){
+  for(const e of log){ // log is newest-first
+    if(e.id!==id)continue;
+    if(e.action==='OUT')return null;
+    if(e.action==='IN')return e;
+  }
+  return null;
+}
+
+// live clock path: uses selected mode + current time + selected job site
+function record(name,id,unknown){return recordAt(name,id,mode,Date.now(),false,unknown,($('siteSel')&&$('siteSel').value)||curSite);}
+
+// general recorder. action='IN'|'OUT', now=timestamp, manual=admin entry, site=job site. statusEl picks where messages show.
+function recordAt(name,id,action,now,manual,unknown,site){
+  let shiftHours=null, flag='', permitBy='', permitReason='', adjTs=null;
+  const statusEl=manual?'adminStatus':'status';
+
+  if(action==='IN'){
+    adjTs=adjustStart(now);     // round UP to next 15 min, floor 6:00
+  }
+
+  if(action==='OUT'){
+    adjTs=adjustEnd(now);       // round DOWN to previous 15 min
+    const inEntry=openIn(id);
+    if(inEntry){
+      shiftHours=(adjTs-startTs(inEntry))/3600000;
+      if(shiftHours>MAX_HOURS){
+        const by=prompt(
+          `${name} worked ${shiftHours.toFixed(2)} h — over the ${MAX_HOURS}h limit.\n`+
+          `Overtime approval REQUIRED to clock out.\n\nEnter approver name (Cancel to abort):`);
+        if(by===null||!by.trim()){
+          showStatus('err','Clock-out blocked',`Over ${MAX_HOURS}h needs approval — not recorded.`,statusEl);
+          navigator.vibrate&&navigator.vibrate([200,80,200]);
+          return false;
+        }
+        const reason=prompt('Reason / authorization note (optional):')||'';
+        permitBy=by.trim();permitReason=reason.trim();
+        flag='OVERTIME-APPROVED';
+      } else if(shiftHours<MIN_HOURS){
+        flag='SHORT';
+      } else {
+        flag='OK';
+      }
+    } else {
+      flag='NO-MATCHING-IN';
+    }
+  }
+
+  const entry={ts:now,name,id,action,shiftHours,flag,permitBy,permitReason,adjTs,manual:!!manual,site:site||''};
+  log.unshift(entry);log.sort((a,b)=>b.ts-a.ts);save();
+  navigator.vibrate&&navigator.vibrate(unknown?[80,60,80]:(flag==='SHORT'?[60,40,60,40,60]:120));
+
+  const t=new Date(now).toLocaleTimeString();
+  const effT=adjTs!=null?new Date(adjTs).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
+  let head=(action==='IN'?'✓ Clocked IN':'✓ Clocked OUT')+(manual?' (manual)':'')+(unknown?' (unregistered)':'');
+  let sub=`${name} · ${t}`, type=action==='IN'?'ok':'warn';
+  if(action==='IN'&&adjTs!==now){sub=`${name} · ${t} → start counted ${effT}`;}
+  if(action==='OUT'&&shiftHours!=null){
+    sub=`${name} · ${shiftHours.toFixed(2)} h${adjTs!==now?' · ends '+effT:''}`;
+    if(flag==='SHORT'){type='err';head='⚠ Clocked OUT — below '+MIN_HOURS+'h minimum';}
+    else if(flag==='OVERTIME-APPROVED'){head='✓ Clocked OUT — overtime approved';sub+=` · by ${permitBy}`;}
+  }
+  showStatus(type,head,sub,statusEl);
+  return true;
+}
+
+/* ---------- status ---------- */
+function showStatus(type,big,sub,el='status'){
+  const s=$(el);
+  s.className='status show '+type;
+  s.innerHTML=`<span class="big">${big}</span><span class="muted">${sub||''}</span>`;
+  clearTimeout(s._t);s._t=setTimeout(()=>s.classList.remove('show'),5000);
+}
+
+/* ---------- roster ---------- */
+$('captureBtn').onclick=async()=>{
+  if(!nfcSupported){showStatus('err','Web NFC not available','Type the ID manually instead.','rosterStatus');return;}
+  captureTarget='roster';
+  $('empId').classList.add('pending');
+  showStatus('warn','Hold a card to the phone…','Capturing ID','rosterStatus');
+  if(!scanning)await toggleScan();
+};
+$('addEmpBtn').onclick=()=>{
+  const name=$('empName').value.trim();
+  const card=norm($('empId').value.trim());
+  if(!name){showStatus('err','Name required','','rosterStatus');return;}
+  if(card&&roster.some(r=>r.card&&norm(r.card)===card)){showStatus('err','Card already assigned','','rosterStatus');return;}
+  roster.push({key:newKey(),name,card});save();
+  $('empName').value='';$('empId').value='';$('empId').classList.remove('pending');
+  showStatus('ok','Added',name+(card?'':' (name-only)'),'rosterStatus');
+  renderRoster();renderManualEmployees();renderClock();
+};
+function renderRoster(){
+  const el=$('rosterList');
+  if(roster.length===0){el.innerHTML='<div class="empty">No employees yet.</div>';return;}
+  el.innerHTML=roster.map((r,i)=>`<div class="roster-item">
+    <div class="info"><div class="name">${esc(r.name)}</div>
+      <div class="id">${r.card?esc(r.card):'name-only · no card'}</div></div>
+    <button class="btn danger sm" onclick="delEmp(${i})">Remove</button></div>`).join('');
+}
+function delEmp(i){if(confirm('Remove '+roster[i].name+'?')){
+  if(roster[i].key===ownerKey){ownerKey='';saveOwner();}
+  roster.splice(i,1);save();renderRoster();renderManualEmployees();renderClock();}}
+
+/* ---------- log / stats ---------- */
+function renderLog(){
+  const el=$('logBody');
+  if(log.length===0){el.innerHTML='<div class="empty">No records yet.</div>';}
+  else{
+    el.innerHTML='<table><thead><tr><th>Time</th><th>Employee</th><th>Action</th><th>Shift / Status</th></tr></thead><tbody>'+
+      log.slice(0,200).map(e=>{
+        const d=new Date(e.ts);
+        let info='';
+        if(e.action==='IN'&&e.adjTs!=null&&e.adjTs!==e.ts){
+          info=`<span class="muted">start → ${new Date(e.adjTs).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`;
+        }
+        if(e.action==='OUT'&&e.shiftHours!=null){
+          const fl=e.flag||'';
+          const cls=fl==='SHORT'?'fl-short':fl==='OVERTIME-APPROVED'?'fl-ot':fl==='NO-MATCHING-IN'?'fl-na':'fl-ok';
+          const lbl=fl==='SHORT'?'Below min':fl==='OVERTIME-APPROVED'?'OT approved':fl==='NO-MATCHING-IN'?'No IN':'OK';
+          const endNote=(e.adjTs!=null&&e.adjTs!==e.ts)?` <span class="muted">(ends ${new Date(e.adjTs).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})})</span>`:'';
+          info=`${e.shiftHours.toFixed(2)} h${endNote} <span class="flag ${cls}">${lbl}</span>`+
+               (e.permitBy?`<br><span class="muted">by ${esc(e.permitBy)}${e.permitReason?' · '+esc(e.permitReason):''}</span>`:'');
+        }
+        const mflag=e.manual?' <span class="flag fl-na">manual</span>':'';
+        const siteNote=e.site?`<br><span class="muted">📍 ${esc(e.site)}</span>`:'';
+        return `<tr><td>${d.toLocaleDateString()}<br><span class="muted">${d.toLocaleTimeString()}</span></td>
+          <td>${esc(e.name)}${siteNote}</td><td><span class="badge ${e.action}">${e.action}</span>${mflag}</td><td>${info}</td></tr>`;
+      }).join('')+'</tbody></table>';
+  }
+  // stats today
+  const today=new Date().toDateString();
+  const todays=log.filter(e=>new Date(e.ts).toDateString()===today);
+  $('statEvents').textContent=todays.length;
+  // currently in = per person last action today is IN
+  const last={};
+  [...todays].reverse().forEach(e=>last[e.id]=e.action);
+  $('statIn').textContent=Object.values(last).filter(a=>a==='IN').length;
+  $('statHours').textContent=totalHours(todays).toFixed(1);
+}
+function totalHours(entries){
+  // pair IN->OUT per employee chronologically
+  const byEmp={};
+  [...entries].sort((a,b)=>a.ts-b.ts).forEach(e=>{(byEmp[e.id]=byEmp[e.id]||[]).push(e)});
+  let ms=0;
+  Object.values(byEmp).forEach(list=>{
+    let inTs=null;
+    list.forEach(e=>{
+      if(e.action==='IN')inTs=startTs(e);
+      else if(e.action==='OUT'&&inTs!=null){ms+=startTs(e)-inTs;inTs=null;}
+    });
+  });
+  return ms/3600000;
+}
+
+/* ---------- CSV ---------- */
+function toCSV(rows){
+  const head=['Date','Tap Time','Effective Time','Employee','Job Site','Action','Shift Hours','Status','Source','Approved By','Reason','Emp ID','Timestamp (ISO)'];
+  const body=rows.map(e=>{
+    const d=new Date(e.ts);
+    const eff=e.adjTs!=null?new Date(e.adjTs).toLocaleTimeString():'';
+    return [d.toLocaleDateString(),d.toLocaleTimeString(),eff,e.name,e.site||'',e.action,
+            e.shiftHours!=null?e.shiftHours.toFixed(2):'',
+            e.flag||'',e.manual?'Manual (admin)':'Tap/Button',e.permitBy||'',e.permitReason||'',e.id,d.toISOString()]
+      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+  return [head.join(','),...body].join('\r\n');
+}
+function download(name,text){
+  const blob=new Blob([text],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('exportBtn').onclick=()=>{
+  if(log.length===0)return alert('No records to export.');
+  download('timeclock_all_'+stamp()+'.csv',toCSV([...log].reverse()));
+};
+$('exportTodayBtn').onclick=()=>{
+  const today=new Date().toDateString();
+  const rows=log.filter(e=>new Date(e.ts).toDateString()===today).reverse();
+  if(rows.length===0)return alert('No records today.');
+  download('timeclock_'+stamp()+'.csv',toCSV(rows));
+};
+// individual: download only the registered owner's own records (no password needed)
+$('myTimesheetBtn').onclick=()=>{
+  const o=getOwner();
+  if(!o){showStatus('err','No employee registered','Register this phone first.');return;}
+  const rows=log.filter(e=>e.id===o.key).reverse();
+  if(rows.length===0){showStatus('warn','Nothing to download',o.name+' has no records yet.');return;}
+  const safe=o.name.replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')||'employee';
+  download('timesheet_'+safe+'_'+stamp()+'.csv',toCSV(rows));
+  showStatus('ok','Timesheet downloaded',o.name+' · '+rows.length+' record(s)');
+};
+$('clearBtn').onclick=()=>{
+  if(!adminUnlocked)return;
+  if(confirm('Delete ALL time records? Export first if you need them.')){log=[];save();renderLog();renderClock();}
+};
+$('lockBtn').onclick=lockAdmin;
+function stamp(){return new Date().toISOString().slice(0,10)}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+
+setMode('IN');renderSites();renderClock();renderRecords();renderAdmin();
+</script>
+</body>
+</html>
