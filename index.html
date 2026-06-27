@@ -102,7 +102,19 @@
 </head>
 <body>
 <header>
-  <h1><span class="dot" id="liveDot"></span>23Constructions Clock</h1>
+  <h1><svg class="brand" viewBox="200 228 712 908" height="42" aria-label="23 CONS" style="flex:0 0 auto">
+      <g fill="none" stroke="#FF6A1A" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 455 250 L 740 250 C 832 250 882 332 882 432 C 882 545 812 618 700 626 C 815 636 888 722 888 845 C 888 1002 772 1108 648 1100"/>
+        <path d="M 420 250 C 360 250 300 295 270 360 C 245 415 235 470 235 520 L 235 540 L 400 540 L 400 360 M 460 300 C 540 360 560 470 470 600 C 360 760 270 880 225 1000 L 225 1095 L 615 1095"/>
+      </g>
+      <path d="M 430 1085 L 430 905 L 480 855 L 555 855 L 555 1085" fill="none" stroke="#FF6A1A" stroke-width="14" stroke-linejoin="round"/>
+      <g stroke="#FF6A1A" stroke-width="14">
+        <line x1="600" y1="1085" x2="600" y2="785"/>
+        <line x1="640" y1="1085" x2="640" y2="818"/>
+        <line x1="680" y1="1085" x2="680" y2="852"/>
+        <line x1="720" y1="1085" x2="720" y2="886"/>
+      </g>
+    </svg><span class="dot" id="liveDot"></span>23Constructions Clock</h1>
   <span class="muted" id="clock"></span>
 </header>
 <main>
@@ -1237,22 +1249,4 @@ $('downloadWeekBtn').onclick=()=>{
   const ws=Number($('weekSel').value)||startOfWeek(Date.now());
   const we=new Date(ws); we.setDate(we.getDate()+7); const weEnd=we.getTime();
   const rows=log.filter(e=>e.id===o.key && e.ts>=ws && e.ts<weEnd).reverse();
-  if(rows.length===0){showStatus('warn','Nothing for that week',o.name+' has no records in the selected week.');return;}
-  const safe=o.name.replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')||'employee';
-  const wk=new Date(ws), p=n=>String(n).padStart(2,'0');
-  download('timesheet_'+safe+'_week_'+wk.getFullYear()+'-'+p(wk.getMonth()+1)+'-'+p(wk.getDate())+'.csv',toCSV(rows));
-  showStatus('ok','Week downloaded',o.name+' · '+rows.length+' record(s)');
-};
-$('clearBtn').onclick=()=>{
-  if(!adminUnlocked)return;
-  if(confirm('Delete ALL time records? Export first if you need them.')){log=[];save();fbClearRecords();renderLog();renderClock();}
-};
-$('lockBtn').onclick=lockAdmin;
-function stamp(){return new Date().toISOString().slice(0,10)}
-function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-
-setMode('IN');renderSites();renderClock();renderAdmin();renderForeman();
-startSync();   // attach Firebase realtime listeners (all devices stay in sync)
-</script>
-</body>
-</html>
+  if(rows.length===0){showStatus('warn','No
